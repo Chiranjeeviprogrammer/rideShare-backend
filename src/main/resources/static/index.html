@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RideShare Dashboard</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --secondary: #10b981;
+            --secondary-hover: #059669;
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+
+        body { 
+            font-family: 'Inter', system-ui, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background-color: var(--bg-color); 
+            color: var(--text); 
+        }
+
+        .container { 
+            max-width: 1200px; 
+            margin: 40px auto; 
+            padding: 20px; 
+        }
+
+        h1 { 
+            text-align: center; 
+            font-size: 2.5rem;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 40px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border);
+        }
+
+        .card h2 {
+            margin-top: 0;
+            color: #e2e8f0;
+            font-size: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+
+        label {
+            display: block;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #475569;
+            background: #0f172a;
+            color: white;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+        }
+
+        button {
+            margin-top: 20px;
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button:hover { background-color: var(--primary-hover); }
+        button:active { transform: scale(0.98); }
+        
+        .btn-success { background-color: var(--secondary); margin-top: 10px;}
+        .btn-success:hover { background-color: var(--secondary-hover); }
+
+        .list-container {
+            margin-top: 15px;
+            max-height: 250px;
+            overflow-y: auto;
+            background: #0f172a;
+            border-radius: 6px;
+            padding: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .list-item {
+            padding: 15px 10px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .list-item:last-child { border-bottom: none; }
+
+        .badge {
+            background: #3b82f6;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .badge.pending { background: #f59e0b; }
+        .badge.accepted { background: #10b981; }
+
+        #ws-log {
+            font-family: monospace;
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 6px;
+            height: 100px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚕 RideShare Full System UI</h1>
+        
+        <div class="grid">
+            <!-- Create User -->
+            <div class="card">
+                <h2>1. Add User</h2>
+                <form id="userForm">
+                    <label>Name</label>
+                    <input type="text" id="name" required placeholder="e.g. John Doe">
+                    <label>Email</label>
+                    <input type="email" id="email" required placeholder="john@example.com">
+                    <label>Role</label>
+                    <select id="role">
+                        <option value="RIDER">Rider</option>
+                        <option value="DRIVER">Driver</option>
+                    </select>
+                    <button type="submit">Create User</button>
+                </form>
+            </div>
+
+            <!-- Users List -->
+            <div class="card">
+                <h2>Registered Users</h2>
+                <div class="list-container" id="usersList">
+                    <p style="color: #94a3b8; text-align: center;">Loading...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <!-- Request Ride -->
+            <div class="card">
+                <h2>2. Book a Ride (Rider)</h2>
+                <form id="rideForm">
+                    <label>Select Rider</label>
+                    <select id="riderSelect" required>
+                        <option value="">-- Choose Rider --</option>
+                    </select>
+
+                    <label>Pickup Location</label>
+                    <input type="text" id="pickup" required placeholder="e.g. Central Park">
+                    
+                    <label>Dropoff Location</label>
+                    <input type="text" id="dropoff" required placeholder="e.g. Times Square">
+                    
+                    <label>Fare Estimate ($)</label>
+                    <input type="number" id="fare" required placeholder="25.50" step="0.01">
+
+                    <button type="submit">Request Ride</button>
+                </form>
+            </div>
+
+            <!-- Rides List -->
+            <div class="card">
+                <h2>Active Rides</h2>
+                <div class="list-container" id="ridesList">
+                    <p style="color: #94a3b8; text-align: center;">Loading rides...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- WebSockets Simulation -->
+        <div class="card" style="margin-bottom: 40px;">
+            <h2>3. Live Location Tracking (WebSockets)</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Simulate sending GPS coordinates from a driver's app.</p>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="sendLocation()" style="width: 200px;">Send GPS Update</button>
+                <button onclick="clearLogs()" style="width: 150px; background: #64748b;">Clear Logs</button>
+            </div>
+            <div id="ws-log">Connecting to WebSockets...</div>
+        </div>
+
+    </div>
+
+    <script>
+        let usersData = [];
+        let ws;
+
+        // Fetch Users
+        async function fetchUsers() {
+            const res = await fetch('/api/users');
+            usersData = await res.json();
+            
+            // Update List
+            document.getElementById('usersList').innerHTML = usersData.map(u => `
+                <div class="list-item">
+                    <div><strong>${u.name}</strong> <span style="color:#94a3b8;font-size:0.8rem;">(ID: ${u.id})</span></div>
+                    <span class="badge" style="background: ${u.role === 'DRIVER' ? '#10b981' : '#3b82f6'}">${u.role}</span>
+                </div>
+            `).join('') || '<p style="text-align:center; color:#94a3b8;">No users yet</p>';
+
+            // Update Rider Dropdown
+            const riderSelect = document.getElementById('riderSelect');
+            riderSelect.innerHTML = '<option value="">-- Choose Rider --</option>' + 
+                usersData.filter(u => u.role === 'RIDER').map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+        }
+
+        // Fetch Rides
+        async function fetchRides() {
+            const res = await fetch('/api/rides');
+            const rides = await res.json();
+            
+            const driverOptions = usersData.filter(u => u.role === 'DRIVER').map(u => `<option value="${u.id}">${u.name}</option>`).join('');
+
+            document.getElementById('ridesList').innerHTML = rides.map(r => `
+                <div class="list-item" style="flex-direction: column; align-items: flex-start;">
+                    <div style="display:flex; justify-content:space-between; width:100%;">
+                        <div>
+                            <strong>Ride #${r.id}</strong> - ${r.pickupLocation} ➔ ${r.dropoffLocation}
+                            <div style="font-size:0.85rem; color:#94a3b8; margin-top:5px;">Rider: ${r.rider.name} | Fare: $${r.fare}</div>
+                        </div>
+                        <div>
+                            <span class="badge ${r.status.toLowerCase()}">${r.status}</span>
+                        </div>
+                    </div>
+                    ${r.status === 'PENDING' ? `
+                        <div style="margin-top: 15px; width: 100%; display: flex; gap: 10px;">
+                            <select id="driver-for-${r.id}" style="padding: 5px; flex: 1;">
+                                <option value="">-- Select Driver to Accept --</option>
+                                ${driverOptions}
+                            </select>
+                            <button onclick="acceptRide(${r.id})" class="btn-success" style="margin: 0; padding: 5px 15px; width: auto;">Accept Ride</button>
+                        </div>
+                    ` : `<div style="font-size:0.85rem; color:#10b981; margin-top:10px;">Accepted by Driver: ${r.driver ? r.driver.name : 'Unknown'}</div>`}
+                </div>
+            `).join('') || '<p style="text-align:center; color:#94a3b8;">No rides requested yet</p>';
+        }
+
+        // Create User
+        document.getElementById('userForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await fetch('/api/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: document.getElementById('name').value,
+                    email: document.getElementById('email').value,
+                    role: document.getElementById('role').value
+                })
+            });
+            e.target.reset();
+            await fetchUsers();
+            await fetchRides();
+        });
+
+        // Request Ride
+        document.getElementById('rideForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const riderId = document.getElementById('riderSelect').value;
+            if(!riderId) return alert("Please select a Rider");
+
+            await fetch('/api/rides', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    rider: { id: parseInt(riderId) },
+                    pickupLocation: document.getElementById('pickup').value,
+                    dropoffLocation: document.getElementById('dropoff').value,
+                    fare: parseFloat(document.getElementById('fare').value)
+                })
+            });
+            e.target.reset();
+            await fetchRides();
+        });
+
+        // Accept Ride
+        async function acceptRide(rideId) {
+            const driverId = document.getElementById(`driver-for-${rideId}`).value;
+            if(!driverId) return alert("Please select a Driver to accept the ride.");
+            
+            await fetch(`/api/rides/${rideId}/accept?driverId=${driverId}`, { method: 'PUT' });
+            await fetchRides();
+        }
+
+        // WebSockets Setup
+        function setupWebSocket() {
+            const logBox = document.getElementById('ws-log');
+            ws = new WebSocket('ws://' + window.location.host + '/ws/location');
+            
+            ws.onopen = () => { logBox.innerHTML = "Connected to WS Location Server.<br>"; };
+            
+            ws.onmessage = (event) => {
+                logBox.innerHTML += `[RECEIVED] ${event.data}<br>`;
+                logBox.scrollTop = logBox.scrollHeight;
+            };
+            
+            ws.onclose = () => { logBox.innerHTML += "[CLOSED] Connection lost.<br>"; };
+        }
+
+        function sendLocation() {
+            if(!ws || ws.readyState !== WebSocket.OPEN) return alert("WebSocket not connected!");
+            const lat = (Math.random() * (40.8 - 40.7) + 40.7).toFixed(5);
+            const lng = (Math.random() * (-73.9 - -74.0) + -74.0).toFixed(5);
+            const msg = `Driver Location: Lat ${lat}, Lng ${lng}`;
+            ws.send(msg);
+            
+            const logBox = document.getElementById('ws-log');
+            logBox.innerHTML += `[SENT] ${msg}<br>`;
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        function clearLogs() {
+            document.getElementById('ws-log').innerHTML = "";
+        }
+
+        // Init
+        async function init() {
+            await fetchUsers();
+            await fetchRides();
+            setupWebSocket();
+        }
+        
+        init();
+    </script>
+</body>
+</html>
