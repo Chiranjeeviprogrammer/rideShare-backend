@@ -24,7 +24,7 @@ public class OtpDeliveryService {
 
         boolean sent = emailService.sendOtpEmail(recipient, otp, purpose, 5);
         if (!sent) {
-            logger.warn("OTP email delivery failed for recipient: {}. [DEV LOG] OTP Code: {}", maskRecipient(recipient), otp);
+            logger.warn("OTP email delivery failed for recipient: {}", maskRecipient(recipient));
         }
         return sent;
     }
