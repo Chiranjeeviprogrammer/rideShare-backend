@@ -43,6 +43,7 @@ public class EmailServiceTest {
         ReflectionTestUtils.setField(emailService, "mailFrom", "test@gmail.com");
         ReflectionTestUtils.setField(emailService, "mailFromName", "RideShare");
         ReflectionTestUtils.setField(emailService, "mailEnabled", true);
+        ReflectionTestUtils.setField(emailService, "fallbackEnabled", true);
     }
 
     @Test
