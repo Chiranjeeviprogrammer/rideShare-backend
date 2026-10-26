@@ -147,4 +147,37 @@ public class EmailServiceTest {
             emailService.sendOtpEmail("chiranjeevi@test.com", "654321", "SIGNUP", 10);
         });
     }
+
+    @Test
+    void testFallbackDisabled_DoesNotCallSmtpWhenBrevoFails() {
+        BrevoEmailService mockBrevo = mock(BrevoEmailService.class);
+        when(mockBrevo.isConfigured()).thenReturn(true);
+        when(mockBrevo.sendTransactionalEmail(any(), any(), any(), any(), any()))
+                .thenReturn(new BrevoEmailService.BrevoSendResult(false, null, "Key not found", 401));
+
+        ReflectionTestUtils.setField(emailService, "brevoEmailService", mockBrevo);
+        ReflectionTestUtils.setField(emailService, "fallbackEnabled", false);
+
+        boolean result = emailService.sendPlainTextEmail("rider@example.com", "Test", "Content");
+
+        assertFalse(result);
+        verify(mailSender, never()).send(any(SimpleMailMessage.class));
+    }
+
+    @Test
+    void testFallbackEnabled_CallsSmtpWhenBrevoReturns401() {
+        BrevoEmailService mockBrevo = mock(BrevoEmailService.class);
+        when(mockBrevo.isConfigured()).thenReturn(true);
+        when(mockBrevo.sendTransactionalEmail(any(), any(), any(), any(), any()))
+                .thenReturn(new BrevoEmailService.BrevoSendResult(false, null, "Key not found", 401));
+
+        ReflectionTestUtils.setField(emailService, "brevoEmailService", mockBrevo);
+        ReflectionTestUtils.setField(emailService, "fallbackEnabled", true);
+        doNothing().when(mailSender).send(any(SimpleMailMessage.class));
+
+        boolean result = emailService.sendPlainTextEmail("rider@example.com", "Test", "Content");
+
+        assertTrue(result);
+        verify(mailSender, times(1)).send(any(SimpleMailMessage.class));
+    }
 }

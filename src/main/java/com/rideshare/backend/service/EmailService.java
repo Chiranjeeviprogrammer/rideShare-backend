@@ -54,6 +54,9 @@ public class EmailService {
     @Value("${rideshare.mail.enabled:true}")
     private boolean mailEnabled;
 
+    @Value("${rideshare.mail.fallback-enabled:false}")
+    private boolean fallbackEnabled;
+
     /**
      * Checks if either Brevo API or Gmail SMTP credentials are appropriately configured.
      */
@@ -167,8 +170,8 @@ public class EmailService {
             }
         }
 
-        // 2. Secondary Fallback: Send via Gmail SMTP if configured
-        if (mailSender != null && mailUsername != null && !mailUsername.isBlank() && mailPassword != null && !mailPassword.isBlank()) {
+        // 2. Secondary Fallback: Send via Gmail SMTP if configured and fallback is explicitly enabled
+        if (fallbackEnabled && mailSender != null && mailUsername != null && !mailUsername.isBlank() && mailPassword != null && !mailPassword.isBlank()) {
             try {
                 SimpleMailMessage message = new SimpleMailMessage();
                 message.setFrom(getFromAddress());
@@ -228,8 +231,8 @@ public class EmailService {
             }
         }
 
-        // 2. Secondary Fallback: Send via Gmail SMTP if configured
-        if (mailSender != null && mailUsername != null && !mailUsername.isBlank() && mailPassword != null && !mailPassword.isBlank()) {
+        // 2. Secondary Fallback: Send via Gmail SMTP if configured and fallback is explicitly enabled
+        if (fallbackEnabled && mailSender != null && mailUsername != null && !mailUsername.isBlank() && mailPassword != null && !mailPassword.isBlank()) {
             try {
                 MimeMessage message = mailSender.createMimeMessage();
                 MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
